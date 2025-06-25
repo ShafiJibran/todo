@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo App</title>
+  <style>
+    :root {
+      --bg-color: #1e1e2f;
+      --text-color: #ffffff;
+      --card-color: #292942;
+      --input-color: #3c3c5a;
+      --button-color: #ff69b4;
+      --hover-color: #ff85c1;
+    }
+
+    body.light {
+      --bg-color: #f5f5f5;
+      --text-color: #1e1e1e;
+      --card-color: #ffffff;
+      --input-color: #e0e0e0;
+      --button-color: #8a2be2;
+      --hover-color: #5e17eb;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      transition: 0.3s;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: var(--card-color);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    input, button {
+      padding: 12px;
+      margin: 5px 0;
+      border-radius: 8px;
+      border: none;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input[type="text"], input[type="date"] {
+      background-color: var(--input-color);
+      color: var(--text-color);
+    }
+
+    .btn {
+      background: var(--button-color);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      background: var(--hover-color);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: var(--input-color);
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeIn 0.4s;
+    }
+
+    .actions button {
+      margin-left: 5px;
+      font-size: 14px;
+    }
+
+    .top-controls {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .top-controls {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Todo App</h1>
+    <div class="top-controls">
+      <button class="btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
+      <input type="text" id="taskInput" placeholder="Enter task">
+      <input type="date" id="dueDate" title="Due date">
+      <button class="btn" onclick="addTodo()">Add Task</button>
+    </div>
+    <ul id="todoList"></ul>
+    <button class="btn" onclick="clearAll()">Clear All</button>
+  </div>
+
+  <script>
+    const taskInput = document.getElementById("taskInput");
+    const todoList = document.getElementById("todoList");
+    const dueDateInput = document.getElementById("dueDate");
+
+    // Load theme
+    if (localStorage.getItem("theme") === "light") {
+      document.body.classList.add("light");
+    }
+
+    // Load todos
+    window.onload = () => {
+      const todos = JSON.parse(localStorage.getItem("todos")) || [];
+      todos.forEach(todo => createTodoItem(todo));
+    };
+
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+      localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+    }
+
+    function saveToLocalStorage() {
+      const todos = [];
+      document.querySelectorAll("li").forEach(li => {
+        const span = li.querySelector("span");
+        const due = li.getAttribute("data-due");
+        todos.push({ text: span.textContent, dueDate: due });
+      });
+      localStorage.setItem("todos", JSON.stringify(todos));
+    }
+
+    function addTodo() {
+      const task = taskInput.value.trim();
+      const dueDate = dueDateInput.value;
+
+      if (task === "") return alert("Please enter a task.");
+
+      const todo = {
+        text: task,
+        dueDate
+      };
+
+      createTodoItem(todo);
+      saveToLocalStorage();
+
+      taskInput.value = "";
+      dueDateInput.value = "";
+    }
+
+    function createTodoItem({ text, dueDate }) {
+      const li = document.createElement("li");
+      li.setAttribute("data-due", dueDate || "");
+
+      const span = document.createElement("span");
+      span.textContent = text + (dueDate ? ` (Due: ${dueDate})` : "");
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn";
+      editBtn.textContent = "✏️";
+      editBtn.onclick = () => {
+        const newText = prompt("Edit Task", text);
+        if (newText !== null && newText.trim() !== "") {
+          span.textContent = newText.trim() + (dueDate ? ` (Due: ${dueDate})` : "");
+          saveToLocalStorage();
+        }
+      };
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn";
+      delBtn.textContent = "🗑️";
+      delBtn.onclick = () => {
+        li.remove();
+        saveToLocalStorage();
+      };
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
+      li.appendChild(span);
+      li.appendChild(actions);
+      todoList.appendChild(li);
+    }
+
+    function clearAll() {
+      todoList.innerHTML = "";
+      localStorage.removeItem("todos");
+    }
+  </script>
+</body>
+</html>
